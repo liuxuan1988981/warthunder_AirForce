@@ -1,0 +1,16 @@
+pro_10_light
+target
+line
+pro_5_heavy
+sub_10_light
+pro_5_destroy
+pro_5_light
+pro_10_destroy
+pro_10_heavy
+sub_5_light
+ship
+sub_10_destroy
+sub_10_heavy
+sub_5_heavy
+boat
+sub_5_destroy
