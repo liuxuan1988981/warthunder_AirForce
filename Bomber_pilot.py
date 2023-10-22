@@ -180,21 +180,25 @@ class ProcessGui():
                 if k.is_pressed('esc'):
                     break
                 # todo:这里处理界面信息
+                time.sleep(5)
+
                 x1, y1, x2, y2 ,state= get_windows('War Thunder')
                 avgx,avgy = avg_get(x1, y1, x2, y2)
                 print(state)
                 print(x1, y1, x2, y2)
                 img = ImageGrab.grab(bbox =(x1, y1, x2, y2))
-                img_check = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
-               
+                img_check = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)               
                 # imyolo = ImageGrab.grab(bbox =(x1+250, y1+100, x1+1500, y1+1000))
                 # imyolo = ImageGrab.grab(bbox =(x1+200, y1+100, x1+1800, y1+900))
                 # imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)
                 # imgyolo = cv2.imread(imyolo,cv2.IMREAD_COLOR)
                 # imgyolo = imyolo        
-                # 测试数据      
-                time.sleep(0.5)
+                # 测试数据   
+                #                  
+
+                # add ocr function to check aleart and speed 
                 firstcheck=check_status("./war/ingame.png","在游戏中",img_check)
+
                 if firstcheck == True:
                     print("====== In gaming ======")
                     battle_falg=True  
@@ -203,14 +207,13 @@ class ProcessGui():
                         dead_flag=False
                         start_thread()
                         print("!!start again!!")
-
                     continue      
                 else:   
                     ########Stop Yolo################
                     print("!!!!!!!~~~~ Stop Yolo~~~~~~~~!!!!!!!")
                     stop_thread()
                     ################################
-                    time.sleep(2)             
+                    time.sleep(1)             
                 if  state == ' - in battle' and firstcheck == False:
                     # mouse_move(avgx, avgy)
                     dead=check_status("./war/dead.png","dead",img_check)
@@ -218,19 +221,8 @@ class ProcessGui():
                         k.press('enter')
                         time.sleep(0.5)
                         k.release('enter') 
-                        time.sleep(4)
-                        k.press('s')
-                        time.sleep(2.5)
-                        k.release('s') 
-                        time.sleep(0.5)
-                        k.press('b')
-                        time.sleep(0.5)
-                        k.release('b') 
-                        time.sleep(0.5)
-                        
-                        dead_flag=True
-                    
-                    
+                        # time.sleep(4)          
+                        dead_flag=True                
                     return_base=check_status("./war/return_base.png","return_base",img_check)
                     if return_base==True:
                         self.routine_direx("./war/return_base.png","return_base",img_check)  
@@ -308,7 +300,7 @@ class ProcessYolo(Process):
         while  True:
             if k.is_pressed('esc'):
                 break
-            imyolo = ImageGrab.grab(bbox =(x1, y1, x1+1600, y1+800))
+            imyolo = ImageGrab.grab(bbox =(x1, y1+100, x1+1600, y1+900))
             imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)
             # cv2.imshow('img', img)
             # cv2.waitKey(1)

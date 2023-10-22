@@ -109,9 +109,9 @@ class click():
             # wlist=['blank',' - Waiting for game',' - Loading',' - in battle',' - Test Sail']
             # cv2.imshow('xxx',img)
             # cv2.waitKey(0)
-            if index ==2:  
-                print(f"start---YOLO")
-                break     
+            # if index ==2:  
+            #     print(f"start---YOLO")
+            #     break     
             if state =='blank' or state ==' - Waiting for game':
                 play=self.check_status("./war/play.png","加入战斗",img)
                 if play == True:
@@ -135,7 +135,7 @@ class click():
                             k.release('esc')
 
             if state ==  ' - Loading': 
-                time.sleep(3)
+                time.sleep(4)
             if  state == ' - in battle'or' - Test Sail':
                 select=self.check_status("./war/select.png","选择",img)     
                 if select == True:
@@ -144,27 +144,28 @@ class click():
                     k.release('enter')  
                     time.sleep(2)
                     index = 1
-
-                if index == 1:
-                    ingame=self.check_status("./war/ingame.png","在游戏中",img)
-                    if ingame == True:
-                        k.press('a')
-                        time.sleep(3)
-                        index = 2
-                        # pyautogui.mouseDown(button='right')
-                        # pyautogui.mouseUp(button='right')
-                        time.sleep(6)   
-                        k.press('b')
-                        time.sleep(0.5)
-                        k.release('b')
-                        time.sleep(0.5)
-                        k.release('a')   
-                        # k.press('shift')
-                        # time.sleep(0.5)
-                        # k.release('shift')       
-                ingame=self.check_status("./war/ingame.png","在游戏中",img)
-                if index==0 and ingame == True:
                     break
+                    # index = 1
+                # if index == 1:
+                #     ingame=self.check_status("./war/ingame.png","在游戏中",img)
+                #     if ingame == True:
+                #         k.press('a')
+                #         time.sleep(3)
+                #         index = 2
+                #         # pyautogui.mouseDown(button='right')
+                #         # pyautogui.mouseUp(button='right')
+                #         time.sleep(6)   
+                #         k.press('b')
+                #         time.sleep(0.5)
+                #         k.release('b')
+                #         time.sleep(0.5)
+                #         k.release('a')   
+                #         # k.press('shift')
+                #         # time.sleep(0.5)
+                #         # k.release('shift')       
+                # ingame=self.check_status("./war/ingame.png","在游戏中",img)
+                # if index==0 and ingame == True:
+                
             # time.sleep(2)
 def avg(x1, y1, x2, y2):
         x = int((x1 + x2) / 2)
