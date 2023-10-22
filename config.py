@@ -9,7 +9,7 @@ height = 416                     # image size
 batch_size = 8
 batch_size_tiny = 32
 total_epoch = 30000      # total epoch
-save_per_epoch = 30        # per save_step save one model
+save_per_epoch = 50        # per save_step save one model
 data_debug = False       # load data in debug model (show pictures when loading images)
 cls_normalizer = 1.0    # Loss coefficient of confidence
 iou_normalizer = 0.07   # loss coefficient of ciou
@@ -30,21 +30,21 @@ loss_name = 'loss.txt'
 lr_init = 2e-4/10                      # initial learning rate	# 0.00261
 lr_lower =1e-6/10                  # minimum learning rate    
 lr_type = 'piecewise'   # type of learning rate( 'exponential', 'piecewise', 'constant')
-piecewise_boundaries = [3, 30, 40]   #  for piecewise
+piecewise_boundaries = [600, 6000, 8000]   #  for piecewise
 piecewise_values = [2e-4/10, 0.00032/10, 2e-4/10, 1e-4/10]   # piecewise learning rate
 
 # configure the optimizer
 optimizer_type = 'adam' # type of optimizer
 momentum = 0.949          # 
-weight_decay = 0.0005
+weight_decay = 0
 
 # ############## training on own dataset ##############
-class_num = 2
+class_num = 1
 # anchors = 16,15, 17,16, 34,31, 39,45, 49,46, 60,51, 69,53, 80,59, 88,72
 # anchors =15,16, 16,15, 35,47, 55,48, 45,60, 72,56, 83,64, 83,74, 86,87
-anchors =15,15, 16,16, 26,29, 30,31, 33,40, 41,56, 58,52, 79,61, 85,79
-voc_class_num = 2
-voc_anchors = 15,15, 16,16, 26,29, 30,31, 33,40, 41,56, 58,52, 79,61, 85,79
+anchors =9,11, 10,10, 10,11, 10,12, 10,12, 12,11, 11,12, 12,13, 13,15
+voc_class_num = 1
+voc_anchors = 9,11, 10,10, 10,11, 10,12, 10,12, 12,11, 11,12, 12,13, 13,15
 voc_names = "./data/train.names"                             # the names of voc dataset
 
 # ############## train on VOC ##############

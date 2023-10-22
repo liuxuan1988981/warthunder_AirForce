@@ -101,7 +101,7 @@ def backward():
     update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
         gvs = optimizer.compute_gradients(loss+l2_loss)
-        clip_grad_var = [gv if gv[0] is None else[tf.clip_by_norm(gv[0], 10.), gv[1]] for gv in gvs]
+        clip_grad_var = [gv if gv[0] is None else[tf.clip_by_norm(gv[0], 50.), gv[1]] for gv in gvs]
         train_step = optimizer.apply_gradients(clip_grad_var, global_step=global_step)
 
     # initialize

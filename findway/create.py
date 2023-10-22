@@ -20,7 +20,7 @@ def get_Player():
 
     if res_map_img.status_code == 200:
         data_map_img = res_map_img.json()
-        print(data_map_img,"11111111111111")
+        
     # 检查响应状态码，200 表示请求成功
     if res_map_obj.status_code == 200:
         # 解析 JSON 响应
@@ -74,10 +74,14 @@ def record_player_data():
 
 # Create a GUI window
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Player Data Recorder")
-    # Create a "Record" button
-    record_button = tk.Button(root, text="Record", command=record_player_data)
-    record_button.pack(pady=20)
-    # Start the GUI event loop
-    root.mainloop()
+    get_Player()
+
+
+
+    # root = tk.Tk()
+    # root.title("Player Data Recorder")
+    # # Create a "Record" button
+    # record_button = tk.Button(root, text="Record", command=record_player_data)
+    # record_button.pack(pady=20)
+    # # Start the GUI event loop
+    # root.mainloop()
