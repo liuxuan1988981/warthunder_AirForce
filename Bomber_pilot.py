@@ -29,7 +29,7 @@ MOUSE_RIGHT=2
 mouse_list_down=[win32con.MOUSEEVENTF_LEFTDOWN, win32con.MOUSEEVENTF_MIDDLEDOWN, win32con.MOUSEEVENTF_RIGHTDOWN]
 mouse_list_up=[win32con.MOUSEEVENTF_LEFTUP, win32con.MOUSEEVENTF_MIDDLEUP, win32con.MOUSEEVENTF_RIGHTUP]
 wait_timer=0
-
+from findway.ocr import ocr_read
 
 
 def mouse_down(x, y, button=MOUSE_LEFT):
@@ -110,7 +110,17 @@ def check_status(img_model_path,name,img):
             print(f"status---{name}")
         else:
             status = False
-        return status        
+        return status     
+
+def check_AIRstatus(img):
+        text=ocr_read(img)
+        if "SPD" and "ALT" in text:
+            status = True
+        else:
+            status = False
+        return status     
+
+
 class ProcessGui():
     '''
     主函数
@@ -158,13 +168,11 @@ class ProcessGui():
             time.sleep(0.5)
             pyautogui.mouseUp(button='left') 
    
-    def run(self):    
-       
+    def run(self):         
         while True:
             start_falg=False
             if k.is_pressed('esc'):
-                break
-            
+                break         
             start_falg=main_run()
             time.sleep(0.5)
          # 开始处理数据
@@ -193,16 +201,14 @@ class ProcessGui():
                 # imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)
                 # imgyolo = cv2.imread(imyolo,cv2.IMREAD_COLOR)
                 # imgyolo = imyolo        
-                # 测试数据   
-                #                  
-
+                # 测试数据                  
                 # add ocr function to check aleart and speed 
-                firstcheck=check_status("./war/ingame.png","在游戏中",img_check)
+                firstcheck=check_AIRstatus(img)
 
                 if firstcheck == True:
                     print("====== In gaming ======")
                     battle_falg=True  
-                    time.sleep(2)   
+                    time.sleep(0.5)   
                     if dead_flag==True and battle_falg==True:
                         dead_flag=False
                         start_thread()
@@ -228,8 +234,6 @@ class ProcessGui():
                         self.routine_direx("./war/return_base.png","return_base",img_check)  
                          
                 if state =='blank' :
-                    # State_Detection(state,img_check,x1, y1, x2, y2)  
-                    # print("!!!!!!!~~~~ State_Detection~~~~~~~~!!!!!!!")
                     time.sleep(0.5)
                     direct.moveTo(avgx, avgy)
                     time.sleep(0.5)
@@ -240,7 +244,6 @@ class ProcessGui():
                     time.sleep(0.5)
                     k.release('enter')   
                     break
-
             pass
               ##ProcessYolo while
         pass
@@ -253,36 +256,78 @@ class ProcessYolo(Process):
     def __init__(self, queueGet, queuePut):
         super().__init__()
         self.queueGet = queueGet
-        self.queuePut = queuePut   
+        self.queuePut = queuePut  
+
     def serch_the_ship(self):
         print("====== time > 100 search the  ship ======")  
         # k.press('space')
         # time.sleep(0.5)        
-        fire_times=0
-        if trun_r <5:
-            trun_r=trun_r+1
-            offset=3000
-        else :
-            offset =-4000
+        offset=3000
         mouse_move(offset,0)
         time.sleep(0.5)
         # direct.move(offset,None)
-        direct.press('l')
-        time.sleep(0.5)
-        # k.release('space')
-        direct.press('c') 
     
+
+    def Check_SPD_ALT (self,x1,y1,x2, y2):
+        image = ImageGrab.grab(bbox =(x1+25, y1+48, x1+275, y1+120))
+        txt=ocr_read(image)
+        index = txt.find("SPD") and txt.find("ALT")
+        if index != -1:
+        # 提取出 "SPD" 后面的数字
+            speed = txt.split("SPD ")[1].split(" ")[0]
+            print(int(speed),"SPD")
+            alt = txt.split("ALT ")[1].split(" ")[0]
+            print(int(alt),"ALT")
+        return int(speed),int(alt)
+
+    def Take_Off_Procedure(self,ground,x1, y1, x2, y2):
+        k.press('w')
+        time.sleep(3)
+        k.release('w') 
+        while True:
+            spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
+            if alt-ground<10:     
+                if spd > 360 :
+                    mouse_move(0,500)
+                    time.sleep(2)
+                    k.press('g')
+                    time.sleep(0.5)
+                    k.release('g') 
+                    time.sleep(2)
+            else:
+                if alt > ground+800:
+                    print("====== Eagle is Flying ======")
+                    break
+            time.sleep(1)
+        return alt
+    
+    def ALTITUDE_Control_Procedure(self,x1, y1, x2, y2):       
+        spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
+        if alt-800>10:      
+            mouse_move(0,-50)
+        else:
+            mouse_move(0,50)
+
+    def Bombing_Procedure(self,ground,ix, iy,x1, y1, x2, y2):   
+        while True:
+            spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
+            if alt-ground>350:      
+                mouse_move(ix,iy)
+            else:
+                k.press('ctrl')
+                time.sleep(0.5)
+                k.release('ctrl') 
+                mouse_move(0,1000)
+                time.sleep(0.5)
+                k.press('w')
+                time.sleep(2)
+                k.release('w') 
+                break
+        return True
+
     def run(self):
         # 首先初始化
-        # label_list=["light","target","battel","ship","destroy"] 
-        print("====== initialize ======")     
-        k.press('shift')
-        time.sleep(0.5)
-        k.release('shift')                         
-        yolo_init()
-        k.press('b')
-        # 发送初始化完成的信号
-        print("====== YOLO initialize complete ======")
+        # preflight station ckeck
         x1, y1, x2, y2 ,state= get_windows('War Thunder')
         avgx,avgy = avg_get(x1, y1, x2, y2)
         testfire=0
@@ -290,98 +335,49 @@ class ProcessYolo(Process):
         fire_times =0
         not_ship_time=0
         not_targe_time=0
-        time.sleep(0.5)
-        k.release('b')
-        time.sleep(0.5)
-        pyautogui.mouseDown(button='left')
-        pyautogui.mouseUp(button='left')
-        direct.press('l')
-        time.sleep(0.5)
+        ALTITUDE=0
+        ALTITUDE_Ground = 0
+        SPEED,altnum=self.Check_SPD_ALT(x1, y1, x2, y2)
+        
+        if SPEED==0:
+            ALTITUDE_Ground=altnum 
+            #  take off
+            ALTITUDE=self.Take_Off_Procedure(ALTITUDE_Ground,x1, y1, x2, y2)
+
+        print("====== initialize ======")                         
+        yolo_init()
+        print("====== YOLO initialize complete ======")      
+        
+        self.ALTITUDE_Control_Procedure(x1, y1, x2, y2)
+
         while  True:
             if k.is_pressed('esc'):
                 break
             imyolo = ImageGrab.grab(bbox =(x1, y1+100, x1+1600, y1+900))
-            imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)
-            # cv2.imshow('img', img)
-            # cv2.waitKey(1)
+            imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)  
             label ,boxes=yolo_run(imgyolo)
-            # print(label ,boxes)        
-            not_ship_time = not_ship_time+1   
+            # print(label ,boxes)         
             not_targe_time= not_targe_time+1
             # if len(label) != 0 and (not list_equal([1],label)) and (not list_equal([1,2],label)) and (not list_equal([2],label)) :
             if len(label) != 0:
-                print("====== Ship in Scream ======")
-                not_ship_time=0
-                not_targe_time=0  
-                if  1 in label: 
-                    trun_r=0
-                    not_targe_time=0
-                    not_ship_time=0
-                    targe_flage=1
-                    ship_flag=2
-                    print("====== target ======")
-                    dx, dy=avg_get(boxes[len(label)-1][0]*1600+x1,boxes[len(label)-1][1]*800+y1,boxes[len(label)-1][2]*1600+x1,boxes[len(label)-1][3]*800+y1)   
-                    # print(" box ",boxes[1][0]*1600+200+x1,boxes[1][1]*800+100+y1,boxes[1][2]*1600+200+x1,boxes[1][3]*800+100+y1)
-                    # print(" dx dy ",dx, dy)
-                    # print(" avgx avgy ",avgx, avgy)
-                    ix, iy=pixel_to_int(dx-avgx,dy-avgy)
-                    mouse_move(ix, iy)
-                    time.sleep(0.5)
-                    pyautogui.mouseDown(button='left')
-                    pyautogui.mouseUp(button='left')
-                    print(" Fire !!!!!!!",ix, iy)
-                    fire_times=fire_times+1
-                    testfire = 0
-                    # time.sleep(0.25)
-                else:
-                    direct.press('p')
-                    fire_times=0
+                print("====== Bomb Point in Scream ======")
+                dx, dy=avg_get(boxes[len(label)-1][0]*1600+x1,boxes[len(label)-1][1]*800+y1,boxes[len(label)-1][2]*1600+x1,boxes[len(label)-1][3]*800+y1)   
+                ix, iy=pixel_to_int(dx-avgx,dy-avgy)
+                if iy<700:
+                    mouse_move(ix, 0)
+                    time.sleep(0.5)  
+                    self.ALTITUDE_Control_Procedure(x1, y1, x2, y2)
+                else: 
+                    print("====== Start Bombing======")
+                    k.press('s')
                     time.sleep(1.5)
-                    testfire = testfire+1
-                    print("testfire",testfire)
-                    if testfire > 30:
-                        testfire = 0
-                        direct.press('l')       
-                        time.sleep(0.5)  
-                        direct.press('c') 
+                    k.release('s')
+                    Bomb_flag=self.Bombing_Procedure(ALTITUDE_Ground,ix, iy,x1, y1, x2, y2)
+   
+            else:
+                self.ALTITUDE_Control_Procedure(x1, y1, x2, y2) 
 
-                if fire_times > 80:
-                    print("====== change to another Ship ======")
-                    fire_times=0
-                    if len(label)>2:
-                        dsx, dsy=avg_get(boxes[1][0]*1600+x1,boxes[1][1]*800+y1,boxes[1][2]*1600+x1,boxes[1][3]*800+y1)   
-                        isx, isy=pixel_to_int(dsx-avgx,dsy-avgy)
-                        mouse_move(isx, isy)
-                        time.sleep(0.5)
-                        direct.press('l')         
-                        # pyautogui.mouseDown(button='left')
-                        # pyautogui.mouseUp(button='left')
-                        direct.press('c') 
-                    else:
-                        continue
-                if fire_times>130:
-                    self.serch_the_ship()
-
-                    # time.sleep(0.5)         
-                                   
-            if not_ship_time>10 and not_targe_time > 10 :
-                print("====== search the  ship ======")  
-                # k.press('space')
-                # time.sleep(0.5)        
-                fire_times=0
-                if trun_r <5:
-                    trun_r=trun_r+1
-                    offset=2000
-                else :
-                    offset =-2000
-                mouse_move(offset,0)
-                time.sleep(0.5)
-                # direct.move(offset,None)
-                direct.press('l')
-                time.sleep(0.5)
-                # k.release('space')
-                direct.press('c')
-            time.sleep(0.5)
+          
         pass   
 
 
