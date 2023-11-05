@@ -1,1 +1,1 @@
-bombing
+denoised

@@ -20,6 +20,7 @@ from win32 import win32api
 from win32 import win32process
 import win32api, win32con
 import os 
+from findway.ocr import ocr_read_gray
 # os.environ['CUDA_VISIBLE_DEVICES']='-1'
 pyautogui.PAUSE = 0.5
 pyautogui.FAILSAFE=False
@@ -29,7 +30,7 @@ MOUSE_RIGHT=2
 mouse_list_down=[win32con.MOUSEEVENTF_LEFTDOWN, win32con.MOUSEEVENTF_MIDDLEDOWN, win32con.MOUSEEVENTF_RIGHTDOWN]
 mouse_list_up=[win32con.MOUSEEVENTF_LEFTUP, win32con.MOUSEEVENTF_MIDDLEUP, win32con.MOUSEEVENTF_RIGHTUP]
 wait_timer=0
-from findway.ocr import ocr_read
+
 
 
 def mouse_down(x, y, button=MOUSE_LEFT):
@@ -64,7 +65,7 @@ def list_equal (a,b):
     return True
 def get_windows(window):
         # wlist=["无",'等','载','战','试']
-        wlist=['blank',' - Waiting for game',' - Loading',' - in battle',' - Test Sail']
+        wlist=['blank',' - Waiting for game',' - Loading',' - In battle',' - Test Flight']
         index=0
         while True: 
             window_name = win32gui.GetWindowText(win32gui.GetForegroundWindow())
@@ -112,12 +113,20 @@ def check_status(img_model_path,name,img):
             status = False
         return status     
 
-def check_AIRstatus(img):
-        text=ocr_read(img)
-        if "SPD" and "ALT" in text:
+def check_AIRstatus(x1,y1,x2, y2):
+        # this is rgb channel
+        img = ImageGrab.grab(bbox =(x1+25, y1+50, x1+300, y1+250))
+        # get r channel
+        # image = np.array(img)
+        image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)  
+        # red_img,g,b = img[:,:,0], img[...,1], img[...,2] 
+        text=ocr_read_gray(image)
+        if "SPD" or "ALT" in text:
             status = True
+            print("check S A OK")
         else:
             status = False
+            print(" S A NULL")
         return status     
 
 
@@ -170,20 +179,30 @@ class ProcessGui():
    
     def run(self):         
         while True:
-            start_falg=False
             if k.is_pressed('esc'):
-                break         
-            start_falg=main_run()
+                break 
+            x1, y1, x2, y2 ,state= get_windows('War Thunder')
+            print(x1, y1, x2, y2)
+            print(state)
+            start_falg=False
+
+            Gamingcheck=check_AIRstatus(x1, y1, x2, y2)
+            
+            if Gamingcheck==True:
+                start_falg=True
+            else:
+                start_falg=main_run()
             time.sleep(0.5)
          # 开始处理数据
             dead_flag=False
-            #########ProcessYolo######################
+            ########ProcessYolo######################
             if start_falg==True:
                 start_thread()
-            else:
+            else :
                 break
-            ##########################################
+            #########################################
             check_false_times=0
+
             while start_falg==True:        
                 if k.is_pressed('esc'):
                     break
@@ -203,12 +222,10 @@ class ProcessGui():
                 # imgyolo = imyolo        
                 # 测试数据                  
                 # add ocr function to check aleart and speed 
-                firstcheck=check_AIRstatus(img)
-
+                firstcheck=check_AIRstatus(x1, y1, x2, y2)
                 if firstcheck == True:
                     print("====== In gaming ======")
                     battle_falg=True  
-                    time.sleep(0.5)   
                     if dead_flag==True and battle_falg==True:
                         dead_flag=False
                         start_thread()
@@ -267,33 +284,40 @@ class ProcessYolo(Process):
         time.sleep(0.5)
         # direct.move(offset,None)
     
-
     def Check_SPD_ALT (self,x1,y1,x2, y2):
-        image = ImageGrab.grab(bbox =(x1+25, y1+48, x1+275, y1+120))
-        txt=ocr_read(image)
+        speed=0
+        alt=0
+        img = ImageGrab.grab(bbox =(x1+25, y1+48, x1+500, y1+250))
+        image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
+        txt=ocr_read_gray(image)
+        # print(txt,"SPEED-ALT")
         index = txt.find("SPD") and txt.find("ALT")
         if index != -1:
         # 提取出 "SPD" 后面的数字
-            speed = txt.split("SPD ")[1].split(" ")[0]
-            print(int(speed),"SPD")
-            alt = txt.split("ALT ")[1].split(" ")[0]
-            print(int(alt),"ALT")
-        return int(speed),int(alt)
+            speed_char = txt.split("SPD ")[1].split(" ")[0]
+            # print(speed,"speed char")
+            speed_char = speed_char.replace("O", "0").replace("i", "1")
+            speed = int(speed_char)
+            print(speed,"SPD Num ")
+            alt_char = txt.split("ALT ")[1].split("m")[0]            
+            alt_char = alt_char.replace("O", "0").replace("i", "1")
+            # print(alt,"speed char")
+            alt = int(alt_char)
+            print(alt,"ALT Num")
+        return speed,alt
 
     def Take_Off_Procedure(self,ground,x1, y1, x2, y2):
+        print("====== Take off ======")
         k.press('w')
         time.sleep(3)
         k.release('w') 
         while True:
             spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
             if alt-ground<10:     
-                if spd > 360 :
-                    mouse_move(0,500)
-                    time.sleep(2)
-                    k.press('g')
-                    time.sleep(0.5)
-                    k.release('g') 
-                    time.sleep(2)
+                if spd > 230 :
+                    mouse_move(0,-1000)
+                    print("====== Take off move(0,-1000)======")
+                    time.sleep(4)                   
             else:
                 if alt > ground+800:
                     print("====== Eagle is Flying ======")
@@ -304,9 +328,9 @@ class ProcessYolo(Process):
     def ALTITUDE_Control_Procedure(self,x1, y1, x2, y2):       
         spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
         if alt-800>10:      
-            mouse_move(0,-50)
-        else:
             mouse_move(0,50)
+        else:
+            mouse_move(0,-50)
 
     def Bombing_Procedure(self,ground,ix, iy,x1, y1, x2, y2):   
         while True:
@@ -328,6 +352,7 @@ class ProcessYolo(Process):
     def run(self):
         # 首先初始化
         # preflight station ckeck
+        print("====== YOLO Start ======")
         x1, y1, x2, y2 ,state= get_windows('War Thunder')
         avgx,avgy = avg_get(x1, y1, x2, y2)
         testfire=0
@@ -343,13 +368,9 @@ class ProcessYolo(Process):
             ALTITUDE_Ground=altnum 
             #  take off
             ALTITUDE=self.Take_Off_Procedure(ALTITUDE_Ground,x1, y1, x2, y2)
-
         print("====== initialize ======")                         
         yolo_init()
-        print("====== YOLO initialize complete ======")      
-        
-        self.ALTITUDE_Control_Procedure(x1, y1, x2, y2)
-
+        print("====== YOLO initialize complete ======")                  
         while  True:
             if k.is_pressed('esc'):
                 break
@@ -376,8 +397,7 @@ class ProcessYolo(Process):
    
             else:
                 self.ALTITUDE_Control_Procedure(x1, y1, x2, y2) 
-
-          
+      
         pass   
 
 

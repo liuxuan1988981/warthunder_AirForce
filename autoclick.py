@@ -21,7 +21,7 @@ def avg_get(x1, y1, x2, y2):
 
 def get_windows(window):
         # wlist=["无",'等','载','战','试']
-        wlist=['blank',' - Waiting for game',' - Loading',' - in battle',' - Test Sail']
+        wlist=['blank',' - Waiting for game',' - Loading',' - In battle',' - Test Flight']
         index=0
         while True: 
             window_name = win32gui.GetWindowText(win32gui.GetForegroundWindow())
@@ -101,6 +101,7 @@ class click():
         index=0
         wait_time =0
         while  True:
+            time.sleep(1)
             x1, y1, x2, y2 ,state= get_windows('War Thunder')
             print(x1, y1, x2, y2)
             print(state)
