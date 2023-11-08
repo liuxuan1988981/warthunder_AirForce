@@ -20,7 +20,7 @@ from win32 import win32api
 from win32 import win32process
 import win32api, win32con
 import os 
-from findway.ocr import ocr_read_gray
+from findway.ocr import Check_SPD_ALT
 # os.environ['CUDA_VISIBLE_DEVICES']='-1'
 pyautogui.PAUSE = 0.5
 pyautogui.FAILSAFE=False
@@ -115,7 +115,7 @@ def check_status(img_model_path,name,img):
 
 def check_AIRstatus(x1,y1,x2, y2):
         # this is rgb channel
-        img = ImageGrab.grab(bbox =(x1+25, y1+50, x1+300, y1+250))
+        img = ImageGrab.grab(bbox =(x1+25, y1+80, x1+275, y1+150))
         # get r channel
         # image = np.array(img)
         image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)  
@@ -185,8 +185,12 @@ class ProcessGui():
             print(x1, y1, x2, y2)
             print(state)
             start_falg=False
-
-            Gamingcheck=check_AIRstatus(x1, y1, x2, y2)
+            ###############game check
+            for i in range(10):
+                Gamingcheck=Check_SPD_ALT(x1, y1, x2, y2)[0]
+                if Gamingcheck ==True:
+                    break
+                time.sleep(0.25)
             
             if Gamingcheck==True:
                 start_falg=True
@@ -221,8 +225,13 @@ class ProcessGui():
                 # imgyolo = cv2.imread(imyolo,cv2.IMREAD_COLOR)
                 # imgyolo = imyolo        
                 # 测试数据                  
-                # add ocr function to check aleart and speed 
-                firstcheck=check_AIRstatus(x1, y1, x2, y2)
+                # game check~~~~~~~~~~~~~~~~~~~~~~~~~~##########################
+                for i in range(10):
+                    firstcheck=Check_SPD_ALT(x1, y1, x2, y2)[0]
+                    if firstcheck ==True:
+                        break
+                    time.sleep(0.5)
+   
                 if firstcheck == True:
                     print("====== In gaming ======")
                     battle_falg=True  
@@ -238,7 +247,7 @@ class ProcessGui():
                     ################################
                     time.sleep(1)             
                 if  state == ' - in battle' and firstcheck == False:
-                    # mouse_move(avgx, avgy)
+                    
                     dead=check_status("./war/dead.png","dead",img_check)
                     if dead==True:
                         k.press('enter')
@@ -274,74 +283,63 @@ class ProcessYolo(Process):
         super().__init__()
         self.queueGet = queueGet
         self.queuePut = queuePut  
+        self.pull_up = False
 
-    def serch_the_ship(self):
-        print("====== time > 100 search the  ship ======")  
-        # k.press('space')
-        # time.sleep(0.5)        
-        offset=3000
-        mouse_move(offset,0)
-        time.sleep(0.5)
-        # direct.move(offset,None)
     
-    def Check_SPD_ALT (self,x1,y1,x2, y2):
-        speed=0
-        alt=0
-        img = ImageGrab.grab(bbox =(x1+25, y1+48, x1+500, y1+250))
-        image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
-        txt=ocr_read_gray(image)
-        # print(txt,"SPEED-ALT")
-        index = txt.find("SPD") and txt.find("ALT")
-        if index != -1:
-        # 提取出 "SPD" 后面的数字
-            speed_char = txt.split("SPD ")[1].split(" ")[0]
-            # print(speed,"speed char")
-            speed_char = speed_char.replace("O", "0").replace("i", "1")
-            speed = int(speed_char)
-            print(speed,"SPD Num ")
-            alt_char = txt.split("ALT ")[1].split("m")[0]            
-            alt_char = alt_char.replace("O", "0").replace("i", "1")
-            # print(alt,"speed char")
-            alt = int(alt_char)
-            print(alt,"ALT Num")
-        return speed,alt
-
     def Take_Off_Procedure(self,ground,x1, y1, x2, y2):
         print("====== Take off ======")
         k.press('w')
         time.sleep(3)
         k.release('w') 
+        spd_ls=0
+        alt_ls=0
         while True:
-            spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
-            if alt-ground<10:     
-                if spd > 230 :
-                    mouse_move(0,-1000)
-                    print("====== Take off move(0,-1000)======")
-                    time.sleep(4)                   
+            if k.is_pressed('esc'):
+                break
+            result,spd,alt=Check_SPD_ALT(x1,y1,x2,y2)
+            if spd*alt!=0:
+                spd_ls=spd
+                alt_ls=alt
+            if spd_ls > 230 and self.pull_up == False:
+                mouse_move(0,-1000)
+                print("====== Take off move(0,-1000)======")
+                self.pull_up = True
+                time.sleep(4)                   
             else:
-                if alt > ground+800:
-                    print("====== Eagle is Flying ======")
+                if alt_ls > ground+800:
+                    print(ground,"====== Eagle is Flying ======")
                     break
             time.sleep(1)
-        return alt
+        return alt_ls
     
-    def ALTITUDE_Control_Procedure(self,x1, y1, x2, y2):       
-        spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
-        if alt-800>10:      
-            mouse_move(0,50)
-        else:
-            mouse_move(0,-50)
+    def ALTITUDE_Control_Procedure(self,x1, y1, x2, y2):   
+        print("====== LTITUDE_Control_Procedure ======")
+        result,spd,alt=Check_SPD_ALT(x1,y1,x2,y2)
+        if alt ==0:
+            pass
+        else:   
+            mouse_move(0,alt-1000)  
+            time.sleep(abs(alt-1000)/100)
+
+        time.sleep(0.25)
 
     def Bombing_Procedure(self,ground,ix, iy,x1, y1, x2, y2):   
+        spd_ls=0
+        alt_ls=0
         while True:
-            spd,alt=self.Check_SPD_ALT(x1,y1,x2,y2)
-            if alt-ground>350:      
+            if k.is_pressed('esc'):
+                break
+            result,spd,alt=Check_SPD_ALT(x1,y1,x2,y2)
+            if spd*alt!=0:
+                spd_ls=spd
+                alt_ls=alt
+            if alt_ls-ground>350:      
                 mouse_move(ix,iy)
             else:
                 k.press('ctrl')
                 time.sleep(0.5)
                 k.release('ctrl') 
-                mouse_move(0,1000)
+                mouse_move(0,2000)
                 time.sleep(0.5)
                 k.press('w')
                 time.sleep(2)
@@ -362,41 +360,45 @@ class ProcessYolo(Process):
         not_targe_time=0
         ALTITUDE=0
         ALTITUDE_Ground = 0
-        SPEED,altnum=self.Check_SPD_ALT(x1, y1, x2, y2)
-        
-        if SPEED==0:
+
+        Result,SPEED,altnum=Check_SPD_ALT(x1, y1, x2, y2)    
+        if Result==True and SPEED==0:
             ALTITUDE_Ground=altnum 
-            #  take off
-            ALTITUDE=self.Take_Off_Procedure(ALTITUDE_Ground,x1, y1, x2, y2)
+        else :
+            ALTITUDE_Ground=0
+
+        ALTITUDE=self.Take_Off_Procedure(ALTITUDE_Ground,x1, y1, x2, y2)
+
         print("====== initialize ======")                         
-        yolo_init()
+        # yolo_init()
         print("====== YOLO initialize complete ======")                  
         while  True:
             if k.is_pressed('esc'):
                 break
             imyolo = ImageGrab.grab(bbox =(x1, y1+100, x1+1600, y1+900))
             imgyolo= cv2.cvtColor(np.array(imyolo), cv2.COLOR_BGR2RGB)  
-            label ,boxes=yolo_run(imgyolo)
+            # label ,boxes=yolo_run(imgyolo)
             # print(label ,boxes)         
             not_targe_time= not_targe_time+1
             # if len(label) != 0 and (not list_equal([1],label)) and (not list_equal([1,2],label)) and (not list_equal([2],label)) :
-            if len(label) != 0:
-                print("====== Bomb Point in Scream ======")
-                dx, dy=avg_get(boxes[len(label)-1][0]*1600+x1,boxes[len(label)-1][1]*800+y1,boxes[len(label)-1][2]*1600+x1,boxes[len(label)-1][3]*800+y1)   
-                ix, iy=pixel_to_int(dx-avgx,dy-avgy)
-                if iy<700:
-                    mouse_move(ix, 0)
-                    time.sleep(0.5)  
-                    self.ALTITUDE_Control_Procedure(x1, y1, x2, y2)
-                else: 
-                    print("====== Start Bombing======")
-                    k.press('s')
-                    time.sleep(1.5)
-                    k.release('s')
-                    Bomb_flag=self.Bombing_Procedure(ALTITUDE_Ground,ix, iy,x1, y1, x2, y2)
+            # if len(label) != 0:
+            #     print("====== Bomb Point in Scream ======")
+            #     dx, dy=avg_get(boxes[len(label)-1][0]*1600+x1,boxes[len(label)-1][1]*800+y1,boxes[len(label)-1][2]*1600+x1,boxes[len(label)-1][3]*800+y1)   
+            #     ix, iy=pixel_to_int(dx-avgx,dy-avgy)
+                # if dy < 7000:
+                #     # mouse_move(ix, 0)
+                #     print("mouse_move(ix, 0)",dx, dy,ix, iy)
+                #     time.sleep(0.5)  
+                #     self.ALTITUDE_Control_Procedure(x1, y1, x2, y2)
+                # else : 
+                #     print("====== Start Bombing======")
+                #     k.press('s')
+                #     time.sleep(1.5)
+                #     k.release('s')
+                #     Bomb_flag=self.Bombing_Procedure(ALTITUDE_Ground,ix, iy,x1, y1, x2, y2)
    
-            else:
-                self.ALTITUDE_Control_Procedure(x1, y1, x2, y2) 
+            # else:
+            self.ALTITUDE_Control_Procedure(x1, y1, x2, y2) 
       
         pass   
 
